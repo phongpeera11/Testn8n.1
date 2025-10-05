@@ -1,0 +1,209 @@
+{
+  "name": "My workflow 3",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -384,
+        -64
+      ],
+      "id": "45e8d764-ae6a-44db-ab8c-c2d768ea706c",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        432,
+        -48
+      ],
+      "id": "1e64f758-aab7-40f7-86fe-75b8650ef6da",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "= สรุปข่าวรายวัน\n\nกรุณาวิเคราะห์และสรุปข้อมูลข่าวจากเนื้อหาด้านล่างนี้อย่างกระชับ เข้าใจง่าย และแบ่งเป็นหัวข้ออย่างชัดเจน\n\nเนื้อหาข่าวทั้งหมด:\n{{ $json.link }}\nคำสั่งงาน\n1. ให้นำเนื้อหาข่าวทั้งหมดที่ได้รับ (แม้จะมีหลายข่าว) มารวมวิเคราะห์ และสรุปทั้งหมดในฉบับเดียวเท่านั้น\n   - ห้ามแยกเป็นหลายส่วน หลายฉบับ หรือหลายข้อความตอบกลับ\n   - ผลลัพธ์สุดท้ายต้องเป็น “อีเมลสรุปข่าวเพียงฉบับเดียว” ครบทุกหมวด\n\n2. ตรวจสอบก่อนสรุป:\n   - ถ้าไม่มีเนื้อหาข่าว ให้ตอบเพียงว่า “ไม่พบเนื้อหาข่าวในขณะนี้”  \n   - ห้ามสร้างตัวอย่างหรือเทมเพลตขึ้นเอง\n\n3. ถ้ามีเนื้อหาข่าว ให้ดำเนินการดังนี้:\n   - รวบรวมข่าวทั้งหมด\n   - จัดหมวดหมู่ข่าว (เศรษฐกิจ, การเมือง, สังคม, ต่างประเทศ, เทคโนโลยี, พลังงาน ฯลฯ)\n   - สรุปแต่ละหมวดให้กระชับ ไม่เกิน 3–4 บรรทัด\n   - สรุปภาพรวมทั้งหมดตอนท้าย\n\n4. ให้จัดรูปแบบผลลัพธ์ การส่งอีเมลฉบับเดียว โดยใช้รูปแบบดังนี้:\n\n\n สรุปข่าวประจำวันจาก {{ $json.creator }}\n\nเรียน ท่านสมาชิก,\n\nขอสรุปข่าวสำคัญประจำวันที่  เพื่อให้ท่านติดตามสถานการณ์ได้อย่างรวดเร็วและเข้าใจง่าย\n\n\n1. หมวดหมู่ข่าว\n- (รายชื่อหมวดข่าวทั้งหมด)\n\n2. สาระสำคัญแต่ละหมวด\n• หมวดเศรษฐกิจ: (สรุปสั้น ๆ)  \n• หมวดการเมือง: (สรุปสั้น ๆ)  \n• หมวดเทคโนโลยี: (สรุปสั้น ๆ)  \n• หมวดอื่น ๆ: (ถ้ามี)\n\n\n3. สรุปภาพรวม\n(สรุปใจความสำคัญของข่าวทั้งหมดภายใน 2–3 บรรทัด)\n\nด้วยความเคารพ,  \nทีมสรุปข่าวอัตโนมัติ\n\n\nข้อกำหนดเพิ่มเติม\n- ผลลัพธ์ต้องอยู่ใน อีเมลฉบับเดียวเท่านั้น\n- ห้ามแยกเป็นหลายข้อความหรือหลายบล็อก\n- ใช้ภาษาทางการ อ่านง่าย เข้าใจทันที\n- ห้ามแต่งข้อมูลที่ไม่มีอยู่จริง",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        640,
+        -48
+      ],
+      "id": "cdb1a4cf-2d14-47ca-9191-cd6689d94183",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        640,
+        128
+      ],
+      "id": "f53ee846-f2f6-4adc-8b31-61f3f9516f41",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "RRDHKzcAUkagvQXF",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://th.investing.com/rss/forex_Fundamental.rss",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        144
+      ],
+      "id": "0bb8a0ea-2f9a-425d-bda3-47375ebe6a49",
+      "name": "ฟอเร็กซ์",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "url": "https://th.investing.com/rss/commodities_Fundamental.rss",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        -208
+      ],
+      "id": "286c55c5-eb34-48af-af0b-5ca5fec2cd27",
+      "name": "โภคภัณฑ์"
+    },
+    {
+      "parameters": {
+        "sendTo": "66010915531@msu.ac.th",
+        "subject": "=ข่าว",
+        "emailType": "text",
+        "message": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1008,
+        -48
+      ],
+      "id": "4eea34a8-8bf1-4600-8969-3a0156f77c32",
+      "name": "Send a message",
+      "webhookId": "ef6a848a-c95f-46b3-aa35-404f5ba131b3",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "earmNtYDrSG48DEx",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "โภคภัณฑ์",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "ฟอเร็กซ์",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ฟอเร็กซ์": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "โภคภัณฑ์": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Bangkok",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "bed30c24-7cae-41c0-9d81-b6f6e7f1fcb6",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ce3431cb2436275978653c2725e89c7ea6868636f3e4f37b148c86d64b6e218a"
+  },
+  "id": "x85E9frSMBzSUv3o",
+  "tags": []
+}
