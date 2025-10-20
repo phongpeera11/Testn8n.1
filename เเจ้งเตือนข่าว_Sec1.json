@@ -1,0 +1,958 @@
+{
+  "name": "เเจ้งเตือนข่าว",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -64,
+        -528
+      ],
+      "id": "29ef4e6b-96a2-4e74-9122-96e6c5036984",
+      "name": "Schedule Trigger",
+      "retryOnFail": false,
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        656,
+        288
+      ],
+      "id": "5726c4fa-5077-4a58-9ef5-078946391ee1",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "1cNferm2gLFYzvDw",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Prompt__User_Message_', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 2.2,
+      "position": [
+        1104,
+        288
+      ],
+      "id": "2767ad82-d1b8-44e1-9abe-df7d04d61859",
+      "name": "AI Agent Tool"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Always sue an AI search tool online.\n\nTopic: \n\nResearch:{{ $json.output }}",
+        "options": {
+          "systemMessage": "# ภาพรวม\nคุณเป็นนักเขียนส่วนจดหมายข่าวระดับมืออาชีพ งานเดียวของคุณคือเขียนส่วนหนึ่งของจดหมายข่าวให้เป็นเนื้อหาที่สมบูรณ์\n\n## คำเเนะนำ\n- ใส่หัวข้อส่วนที่ชัดเจนเสมอ ตามด้วยเนื้อหาของส่วนนั้น\n- อย่าเขียนหัวข้อรวม บทนำ หรือบทสรุุป\n- เขียนในโทนที่เป็นมืออาชีพ เชี่ยวชาญ เเละน่าสนใจ เหมาะสำหรับจดหมายข่าวธุรกิจ\n- หากคุณอ้างอิงข้อเท็จจริง ข้อมูล หรือคำพูด คุณต้องอ้างอิงแหล่งที่มาและให้ URL ที่คลิกได้จริง\n- อย่าสร้างการอ้างอิงขึ้น-ใส่เฉพาะเเหล่งที่มาที่จริงและตรวจสอบได้เท่านั้น\n- รักษาส่วนให้กระซับ มีโครงสร้างที่ดี และอ่านง่าย\n- เเปลไทยให้ด้วยนะ"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1120,
+        0
+      ],
+      "id": "e2bd8622-6861-472f-9673-a439e2f65951",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "output"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1472,
+        0
+      ],
+      "id": "471d84fa-1251-4dd6-ba8e-b1985edff9e1",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Always use AI search tool online\n\nTitle:{{ $('เอเจนต์วางแผน').item.json.output }} \n\nSections: {{  $json.output.join(\"\\n\\n\\n\") }}{{ $json.output[0] }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=# ภาพรวม\nคุณเป็นผู้เชี่ยวชาญด้านการเเก้ไขจดหมายข่าว รวมส่วนที่ให้มาสามส่วนเข้าด้วยกันให้เป็น เนื้อหา HTML ที่สมบูรณ์พร้อมส่งอีเมล พร้อมบทนำและบทสรุปที่ครอบคลุม รักษาโทนที่เป็นมืออาชีพและกระซํบสำหรับผู้อ่านกลุ่มธุรกิจ และรักษาความหมายที่ตั้งใจไว้\n\n## เป้าหมาย\n- ปรับปรุงความชัดเจน การไหล และความสอดคล้องทั่วทุกส่วน\n- รักษาเนื้อหาทั้งหมดไม่เกิน 1000 คำ (ขัดจำกัดสูงสุด) หลีกเลี่ยงเนื้อหาไร้สาระ\n\n## โครงสร้าง (HTML เท่านั้น)\n1) <p> บทนำที่กรอบหัวข้อทั้งสามและความเกี่ยวข้อง อ้างอิงวันที่วันนี้ {{ $now.format('yyyy-MM-dd') }}\n2) สำหรับเเต่ละส่วนที่ให้มา:\n    - <h2> ใช้หรือปรับหัวข้อที่ให้มาเล็กน้อย\n    - เเก้ไขเนื้อหา <p>\n    - การอ้างอิงแบบอินไลน์ที่คลิกได้ใกล้กับข้อความที่เกี่ยวข้อง ใช้ <ahref=\"https://...\">แหล่งที่มา</a> อย่าสร้างแหล่งที่มาขึ้นมา\n3) <h3>แหล่งที่มา</h3><ul> รายการรวมเดียว:\n    - แต่ละรายการ: <li><a href=\"[URL]\">[ชื่อสื่อพิมพ์] - [ชื่อบทความ]</a></li>\n    - รวม URL เต็ม ลบลิงก์ที่ซ้ำกัน และเรียงตามด้วยตัวอักษรตามชื่อสื่อพิมพ์\n4) <p> บทสรุปที่เชื่อมโยงเรื่องราวเข้าด้วยกันพร้อมผลกระทบหรือขั้นตอนต่อไป\n\n## กฎการอ้างอิงและลิงก์\n- ทุกข้อความที่อาศัยข้อมูลภายนอกต้องมีURL ที่จริง ตรวจสอบได้ และคลิกได้\n- รักษาการอ้างอิงที่ให้มา ปรับให้เป็นรูปแบบ <a>\n- ละเว้นลิงก์ที่ตรวจสอบไม่ได้แทนที่จะสร้างขึ้นมา\n- ใช้แท็ก HTML พื้นฐานเท่านั้น (<h2>, <h3>, <p>, <ul>, <il>, <a>) ไม่มีรูปภาพ สคริปต์ สไตล์ หรือ CSS ภายนอก\n- แปลภาษาไทย \n-ให้ยึดตามข้อมูลที่ให้มา\n\n## ข้อมูลนำเข้า\n- คุณจะได้รับสามส่วน แก้ไขและรวมเข้าด้วยกันโดยไม่เพิ่มหัวข้อที่ไม่เกี่ยวข้อง\n\nรูปแบบผลลัพธ์ (ส่งคืนเฉพาะสิ่งนี้)\nSubject: หัวข้อที่ชัดเจนและเฉพาะเจาะจงหนึ่งบรรทัด (น้อยกว่าหรือเท่ากัน 80 อักขระ)\nContnt:\n[เนื้อหา HTML เท่านั้นตามที่ระบุข้างต้น]\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1792,
+        0
+      ],
+      "id": "53794f0b-6d41-4e64-a749-096eaf0d42d0",
+      "name": "AI Agent2"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=นำข้อมูลจาก{{ $json.results[0].content }}{{ $json.results[1].content }}{{ $json.results[2].content }}ที่ได้มาคัดกรองและส่งต่อ โดยยังยึด เนื้อหาจาก 3 เเหล่งมาอยู่\nโดยเเยกหัวข้อย่างชัดเจน",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "# ภาพรวม\nคุณเป็นผู้เชียวชาญในการวางแผนจดหมายข่าว คุณจะได้รับบทความสามบทความจากสัปดาห์ที่ผ่านมา งานของคุณคือคิดหัวข้อที่สร้างสรรค์และสนุกสนาน รวมถึงหัวข้อหลักสำหรับจดหมายข่าวนี้\n\n## คำเเนนนำ\nจดหมายข่าวควรมีการไหลที่ดี ให้ข้อมูลที่เป็นประโยชน์ และครอบคลุมหัวข้อควรมี 3-5 คำ"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        656,
+        0
+      ],
+      "id": "4546b2fa-ea70-4928-871b-d2775930e2c9",
+      "name": "เอเจนต์วางแผน"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.Email }}",
+        "subject": "=ข่าว",
+        "message": "={{ $('AI Agent2').item.json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2448,
+        0
+      ],
+      "id": "087657a8-758c-486a-bdb9-4830ca052865",
+      "name": "Send a message1",
+      "webhookId": "29a1ced5-fe5c-4d3b-afd6-c612e23c1a78",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "QL2ShWcxiVbN9p5a",
+          "name": "Gmail account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1BOW-UVEC79rVgPbQcYKuwV0ckflM88rn1o6jjj8k0L8/edit?usp=sharing",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1380155673,
+          "mode": "list",
+          "cachedResultName": "ข่าวเศรษฐกิจ",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1BOW-UVEC79rVgPbQcYKuwV0ckflM88rn1o6jjj8k0L8/edit#gid=1380155673"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2208,
+        0
+      ],
+      "id": "3fc02aac-9765-4b2a-8037-923f0176ee35",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "g0oa06agBewR01a0",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        656,
+        -240
+      ],
+      "id": "4ff3c065-da62-4fd0-8d11-199094dc8eb5",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "1cNferm2gLFYzvDw",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Prompt__User_Message_', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 2.2,
+      "position": [
+        1120,
+        -240
+      ],
+      "id": "f11b082f-c52f-475c-aea8-207ff68d1095",
+      "name": "AI Agent Tool1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Always sue an AI search tool online.\n\nTopic: \n\nResearch:{{ $json.output }}",
+        "options": {
+          "systemMessage": "# ภาพรวม\nคุณเป็นนักเขียนส่วนจดหมายข่าวระดับมืออาชีพ งานเดียวของคุณคือเขียนส่วนหนึ่งของจดหมายข่าวให้เป็นเนื้อหาที่สมบูรณ์\n\n## คำเเนะนำ\n- ใส่หัวข้อส่วนที่ชัดเจนเสมอ ตามด้วยเนื้อหาของส่วนนั้น\n- อย่าเขียนหัวข้อรวม บทนำ หรือบทสรุุป\n- เขียนในโทนที่เป็นมืออาชีพ เชี่ยวชาญ เเละน่าสนใจ เหมาะสำหรับจดหมายข่าวธุรกิจ\n- หากคุณอ้างอิงข้อเท็จจริง ข้อมูล หรือคำพูด คุณต้องอ้างอิงแหล่งที่มาและให้ URL ที่คลิกได้จริง\n- อย่าสร้างการอ้างอิงขึ้น-ใส่เฉพาะเเหล่งที่มาที่จริงและตรวจสอบได้เท่านั้น\n- รักษาส่วนให้กระซับ มีโครงสร้างที่ดี และอ่านง่าย\n- เเปลไทยให้ด้วยนะ"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1136,
+        -528
+      ],
+      "id": "9fc4ccbb-7fc4-4aa3-9072-f2d5c202b4cd",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "output"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1488,
+        -528
+      ],
+      "id": "8b6e23df-382d-491a-8e80-d9ba445eedf4",
+      "name": "Aggregate1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Always use AI search tool online\n\nTitle:{{ $('เอเจนต์วางแผน1').item.json.output }} \n\nSections: {{  $json.output.join(\"\\n\\n\\n\") }}{{ $json.output[0] }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=# ภาพรวม\nคุณเป็นผู้เชี่ยวชาญด้านการเเก้ไขจดหมายข่าว รวมส่วนที่ให้มาสามส่วนเข้าด้วยกันให้เป็น เนื้อหา HTML ที่สมบูรณ์พร้อมส่งอีเมล พร้อมบทนำและบทสรุปที่ครอบคลุม รักษาโทนที่เป็นมืออาชีพและกระซํบสำหรับผู้อ่านกลุ่มธุรกิจ และรักษาความหมายที่ตั้งใจไว้\n\n## เป้าหมาย\n- ปรับปรุงความชัดเจน การไหล และความสอดคล้องทั่วทุกส่วน\n- รักษาเนื้อหาทั้งหมดไม่เกิน 1000 คำ (ขัดจำกัดสูงสุด) หลีกเลี่ยงเนื้อหาไร้สาระ\n\n## โครงสร้าง (HTML เท่านั้น)\n1) <p> บทนำที่กรอบหัวข้อทั้งสามและความเกี่ยวข้อง อ้างอิงวันที่วันนี้ {{ $now.format('yyyy-MM-dd') }}\n2) สำหรับเเต่ละส่วนที่ให้มา:\n    - <h2> ใช้หรือปรับหัวข้อที่ให้มาเล็กน้อย\n    - เเก้ไขเนื้อหา <p>\n    - การอ้างอิงแบบอินไลน์ที่คลิกได้ใกล้กับข้อความที่เกี่ยวข้อง ใช้ <ahref=\"https://...\">แหล่งที่มา</a> อย่าสร้างแหล่งที่มาขึ้นมา\n3) <h3>แหล่งที่มา</h3><ul> รายการรวมเดียว:\n    - แต่ละรายการ: <li><a href=\"[URL]\">[ชื่อสื่อพิมพ์] - [ชื่อบทความ]</a></li>\n    - รวม URL เต็ม ลบลิงก์ที่ซ้ำกัน และเรียงตามด้วยตัวอักษรตามชื่อสื่อพิมพ์\n4) <p> บทสรุปที่เชื่อมโยงเรื่องราวเข้าด้วยกันพร้อมผลกระทบหรือขั้นตอนต่อไป\n\n## กฎการอ้างอิงและลิงก์\n- ทุกข้อความที่อาศัยข้อมูลภายนอกต้องมีURL ที่จริง ตรวจสอบได้ และคลิกได้\n- รักษาการอ้างอิงที่ให้มา ปรับให้เป็นรูปแบบ <a>\n- ละเว้นลิงก์ที่ตรวจสอบไม่ได้แทนที่จะสร้างขึ้นมา\n- ใช้แท็ก HTML พื้นฐานเท่านั้น (<h2>, <h3>, <p>, <ul>, <il>, <a>) ไม่มีรูปภาพ สคริปต์ สไตล์ หรือ CSS ภายนอก\n- แปลภาษาไทย \n-ให้ยึดตามข้อมูลที่ให้มา\n\n## ข้อมูลนำเข้า\n- คุณจะได้รับสามส่วน แก้ไขและรวมเข้าด้วยกันโดยไม่เพิ่มหัวข้อที่ไม่เกี่ยวข้อง\n\nรูปแบบผลลัพธ์ (ส่งคืนเฉพาะสิ่งนี้)\nSubject: หัวข้อที่ชัดเจนและเฉพาะเจาะจงหนึ่งบรรทัด (น้อยกว่าหรือเท่ากัน 80 อักขระ)\nContnt:\n[เนื้อหา HTML เท่านั้นตามที่ระบุข้างต้น]\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1808,
+        -528
+      ],
+      "id": "9b09fdcc-5362-47fe-8ae0-5d2538662899",
+      "name": "AI Agent3"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=นำข้อมูลจาก{{ $json.results[0].content }}{{ $json.results[1].content }}{{ $json.results[2].content }}ที่ได้มาคัดกรองและส่งต่อ โดยยังยึด เนื้อหาจาก 3 เเหล่งมาอยู่\nโดยเเยกหัวข้อย่างชัดเจน",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "# ภาพรวม\nคุณเป็นผู้เชียวชาญในการวางแผนจดหมายข่าว คุณจะได้รับบทความสามบทความจากสัปดาห์ที่ผ่านมา งานของคุณคือคิดหัวข้อที่สร้างสรรค์และสนุกสนาน รวมถึงหัวข้อหลักสำหรับจดหมายข่าวนี้\n\n## คำเเนนนำ\nจดหมายข่าวควรมีการไหลที่ดี ให้ข้อมูลที่เป็นประโยชน์ และครอบคลุมหัวข้อควรมี 3-5 คำ"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        656,
+        -528
+      ],
+      "id": "88ea853b-d2d6-457e-b084-d9d94b9129b1",
+      "name": "เอเจนต์วางแผน1"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1BOW-UVEC79rVgPbQcYKuwV0ckflM88rn1o6jjj8k0L8/edit?usp=sharing",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 865666496,
+          "mode": "list",
+          "cachedResultName": "ข่าวทอง",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1BOW-UVEC79rVgPbQcYKuwV0ckflM88rn1o6jjj8k0L8/edit#gid=865666496"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2176,
+        -528
+      ],
+      "id": "3f317f0e-9f1c-44b9-a561-237252081d83",
+      "name": "Get row(s) in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "g0oa06agBewR01a0",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.Email }}",
+        "subject": "=ข่าว",
+        "message": "={{ $('AI Agent3').item.json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2432,
+        -528
+      ],
+      "id": "9abe43eb-10c6-413c-816e-6a1c6e2c535a",
+      "name": "Send a message2",
+      "webhookId": "29a1ced5-fe5c-4d3b-afd6-c612e23c1a78",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "QL2ShWcxiVbN9p5a",
+          "name": "Gmail account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        672,
+        -800
+      ],
+      "id": "cd90079d-bd4b-43aa-b73f-d31f141022c6",
+      "name": "Google Gemini Chat Model2",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "1cNferm2gLFYzvDw",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "text": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Prompt__User_Message_', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agentTool",
+      "typeVersion": 2.2,
+      "position": [
+        1136,
+        -800
+      ],
+      "id": "9de63549-07b8-437d-bb96-4953423a0e39",
+      "name": "AI Agent Tool2"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Always sue an AI search tool online.\n\nTopic: \n\nResearch:{{ $json.output }}",
+        "options": {
+          "systemMessage": "# ภาพรวม\nคุณเป็นนักเขียนส่วนจดหมายข่าวระดับมืออาชีพ งานเดียวของคุณคือเขียนส่วนหนึ่งของจดหมายข่าวให้เป็นเนื้อหาที่สมบูรณ์\n\n## คำเเนะนำ\n- ใส่หัวข้อส่วนที่ชัดเจนเสมอ ตามด้วยเนื้อหาของส่วนนั้น\n- อย่าเขียนหัวข้อรวม บทนำ หรือบทสรุุป\n- เขียนในโทนที่เป็นมืออาชีพ เชี่ยวชาญ เเละน่าสนใจ เหมาะสำหรับจดหมายข่าวธุรกิจ\n- หากคุณอ้างอิงข้อเท็จจริง ข้อมูล หรือคำพูด คุณต้องอ้างอิงแหล่งที่มาและให้ URL ที่คลิกได้จริง\n- อย่าสร้างการอ้างอิงขึ้น-ใส่เฉพาะเเหล่งที่มาที่จริงและตรวจสอบได้เท่านั้น\n- รักษาส่วนให้กระซับ มีโครงสร้างที่ดี และอ่านง่าย\n- เเปลไทยให้ด้วยนะ"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1152,
+        -1088
+      ],
+      "id": "832b3e7c-2edf-4e26-b070-e0a0af9bc407",
+      "name": "AI Agent4"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "output"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        1504,
+        -1088
+      ],
+      "id": "d7b9c88e-6020-43f3-b8ff-509d4e76c2b3",
+      "name": "Aggregate2"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Always use AI search tool online\n\nTitle:{{ $('เอเจนต์วางแผน2').item.json.output }} \n\nSections: {{  $json.output.join(\"\\n\\n\\n\") }}{{ $json.output[0] }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "=# ภาพรวม\nคุณเป็นผู้เชี่ยวชาญด้านการเเก้ไขจดหมายข่าว รวมส่วนที่ให้มาสามส่วนเข้าด้วยกันให้เป็น เนื้อหา HTML ที่สมบูรณ์พร้อมส่งอีเมล พร้อมบทนำและบทสรุปที่ครอบคลุม รักษาโทนที่เป็นมืออาชีพและกระซํบสำหรับผู้อ่านกลุ่มธุรกิจ และรักษาความหมายที่ตั้งใจไว้\n\n## เป้าหมาย\n- ปรับปรุงความชัดเจน การไหล และความสอดคล้องทั่วทุกส่วน\n- รักษาเนื้อหาทั้งหมดไม่เกิน 1000 คำ (ขัดจำกัดสูงสุด) หลีกเลี่ยงเนื้อหาไร้สาระ\n\n## โครงสร้าง (HTML เท่านั้น)\n1) <p> บทนำที่กรอบหัวข้อทั้งสามและความเกี่ยวข้อง อ้างอิงวันที่วันนี้ {{ $now.format('yyyy-MM-dd') }}\n2) สำหรับเเต่ละส่วนที่ให้มา:\n    - <h2> ใช้หรือปรับหัวข้อที่ให้มาเล็กน้อย\n    - เเก้ไขเนื้อหา <p>\n    - การอ้างอิงแบบอินไลน์ที่คลิกได้ใกล้กับข้อความที่เกี่ยวข้อง ใช้ <ahref=\"https://...\">แหล่งที่มา</a> อย่าสร้างแหล่งที่มาขึ้นมา\n3) <h3>แหล่งที่มา</h3><ul> รายการรวมเดียว:\n    - แต่ละรายการ: <li><a href=\"[URL]\">[ชื่อสื่อพิมพ์] - [ชื่อบทความ]</a></li>\n    - รวม URL เต็ม ลบลิงก์ที่ซ้ำกัน และเรียงตามด้วยตัวอักษรตามชื่อสื่อพิมพ์\n4) <p> บทสรุปที่เชื่อมโยงเรื่องราวเข้าด้วยกันพร้อมผลกระทบหรือขั้นตอนต่อไป\n\n## กฎการอ้างอิงและลิงก์\n- ทุกข้อความที่อาศัยข้อมูลภายนอกต้องมีURL ที่จริง ตรวจสอบได้ และคลิกได้\n- รักษาการอ้างอิงที่ให้มา ปรับให้เป็นรูปแบบ <a>\n- ละเว้นลิงก์ที่ตรวจสอบไม่ได้แทนที่จะสร้างขึ้นมา\n- ใช้แท็ก HTML พื้นฐานเท่านั้น (<h2>, <h3>, <p>, <ul>, <il>, <a>) ไม่มีรูปภาพ สคริปต์ สไตล์ หรือ CSS ภายนอก\n- แปลภาษาไทย \n-ให้ยึดตามข้อมูลที่ให้มา\n\n## ข้อมูลนำเข้า\n- คุณจะได้รับสามส่วน แก้ไขและรวมเข้าด้วยกันโดยไม่เพิ่มหัวข้อที่ไม่เกี่ยวข้อง\n\nรูปแบบผลลัพธ์ (ส่งคืนเฉพาะสิ่งนี้)\nSubject: หัวข้อที่ชัดเจนและเฉพาะเจาะจงหนึ่งบรรทัด (น้อยกว่าหรือเท่ากัน 80 อักขระ)\nContnt:\n[เนื้อหา HTML เท่านั้นตามที่ระบุข้างต้น]\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        1824,
+        -1088
+      ],
+      "id": "04cbc743-bd5a-4d91-a5d0-33a2910fb350",
+      "name": "AI Agent5"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=นำข้อมูลจาก{{ $json.results[0].content }}{{ $json.results[1].content }}{{ $json.results[2].content }}ที่ได้มาคัดกรองและส่งต่อ โดยยังยึด เนื้อหาจาก 3 เเหล่งมาอยู่\nโดยเเยกหัวข้อย่างชัดเจน",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "# ภาพรวม\nคุณเป็นผู้เชียวชาญในการวางแผนจดหมายข่าว คุณจะได้รับบทความสามบทความจากสัปดาห์ที่ผ่านมา งานของคุณคือคิดหัวข้อที่สร้างสรรค์และสนุกสนาน รวมถึงหัวข้อหลักสำหรับจดหมายข่าวนี้\n\n## คำเเนนนำ\nจดหมายข่าวควรมีการไหลที่ดี ให้ข้อมูลที่เป็นประโยชน์ และครอบคลุมหัวข้อควรมี 3-5 คำ"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        672,
+        -1088
+      ],
+      "id": "7224f419-5ad8-40b0-bc44-37544efc3880",
+      "name": "เอเจนต์วางแผน2"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1BOW-UVEC79rVgPbQcYKuwV0ckflM88rn1o6jjj8k0L8/edit?usp=sharing",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1577098069,
+          "mode": "list",
+          "cachedResultName": "ข่าวคู่เงิน",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1BOW-UVEC79rVgPbQcYKuwV0ckflM88rn1o6jjj8k0L8/edit#gid=1577098069"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2192,
+        -1088
+      ],
+      "id": "189220bf-adea-4141-96d2-03c9995c88f7",
+      "name": "Get row(s) in sheet2",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "g0oa06agBewR01a0",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.Email }}",
+        "subject": "=ข่าว",
+        "message": "={{ $('AI Agent5').item.json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        2416,
+        -1088
+      ],
+      "id": "c3683f98-1061-4a54-a5ce-7eb3a53647a3",
+      "name": "Send a message3",
+      "webhookId": "29a1ced5-fe5c-4d3b-afd6-c612e23c1a78",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "QL2ShWcxiVbN9p5a",
+          "name": "Gmail account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "query": "Forex",
+        "options": {
+          "topic": "news",
+          "max_results": 3,
+          "time_range": "week"
+        }
+      },
+      "type": "@tavily/n8n-nodes-tavily.tavily",
+      "typeVersion": 1,
+      "position": [
+        448,
+        -1088
+      ],
+      "id": "7849aa24-c825-449e-aa78-b56d16447055",
+      "name": "Forex",
+      "credentials": {
+        "tavilyApi": {
+          "id": "FJSed3Ppf89cESfV",
+          "name": "Tavily account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "query": "Gold",
+        "options": {
+          "topic": "news",
+          "max_results": 3,
+          "time_range": "week"
+        }
+      },
+      "type": "@tavily/n8n-nodes-tavily.tavily",
+      "typeVersion": 1,
+      "position": [
+        432,
+        -528
+      ],
+      "id": "e5336422-3cc8-4669-9566-1be083946a75",
+      "name": "Gold",
+      "credentials": {
+        "tavilyApi": {
+          "id": "FJSed3Ppf89cESfV",
+          "name": "Tavily account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "query": "Economy Thai",
+        "options": {
+          "topic": "news",
+          "max_results": 3,
+          "time_range": "week"
+        }
+      },
+      "type": "@tavily/n8n-nodes-tavily.tavily",
+      "typeVersion": 1,
+      "position": [
+        432,
+        0
+      ],
+      "id": "4dcc49c8-7dad-42dd-b8ab-e26dba456fad",
+      "name": "Economy Thai",
+      "credentials": {
+        "tavilyApi": {
+          "id": "FJSed3Ppf89cESfV",
+          "name": "Tavily account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Gold",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Forex",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Economy Thai",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "AI Agent2",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "เอเจนต์วางแผน",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "AI Agent Tool",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent Tool": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "AI Agent2",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "เอเจนต์วางแผน",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "AI Agent2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent2": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "เอเจนต์วางแผน": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "AI Agent3",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "เอเจนต์วางแผน1",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "AI Agent Tool1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent Tool1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "AI Agent3",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "เอเจนต์วางแผน1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Aggregate1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent3": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "เอเจนต์วางแผน1": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet1": {
+      "main": [
+        [
+          {
+            "node": "Send a message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent4",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "AI Agent5",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "เอเจนต์วางแผน2",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "AI Agent Tool2",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent Tool2": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent4",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "AI Agent5",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "เอเจนต์วางแผน2",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent4": {
+      "main": [
+        [
+          {
+            "node": "Aggregate2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate2": {
+      "main": [
+        [
+          {
+            "node": "AI Agent5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent5": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "เอเจนต์วางแผน2": {
+      "main": [
+        [
+          {
+            "node": "AI Agent4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet2": {
+      "main": [
+        [
+          {
+            "node": "Send a message3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Forex": {
+      "main": [
+        [
+          {
+            "node": "เอเจนต์วางแผน2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gold": {
+      "main": [
+        [
+          {
+            "node": "เอเจนต์วางแผน1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Economy Thai": {
+      "main": [
+        [
+          {
+            "node": "เอเจนต์วางแผน",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Bangkok",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "1dbbffb8-7a36-472e-ac69-9e72b0287ec2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8ac0c56583ad266045ba9501082ac46bcc8a09d866f25c3ea4344b8c54187c83"
+  },
+  "id": "gRrngx7VCyj46yfA",
+  "tags": []
+}
